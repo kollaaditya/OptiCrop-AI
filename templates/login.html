@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<section class="auth-section">
+  <div class="container">
+    <div class="row justify-content-center align-items-center min-vh-80">
+      <div class="col-md-5">
+        <div class="auth-card">
+          <div class="auth-card-header text-center">
+            <div class="auth-logo"><i class="fas fa-seedling"></i></div>
+            <h4 class="fw-700 mt-3">Welcome Back</h4>
+            <p class="text-muted small">Sign in to your OptiCrop AI account</p>
+          </div>
+          <div class="auth-card-body">
+            <form method="POST" action="{{ url_for('login') }}">
+              <div class="mb-3">
+                <label class="form-label fw-500">Email Address</label>
+                <div class="input-group">
+                  <span class="input-group-text"><i class="fas fa-envelope text-muted"></i></span>
+                  <input type="email" class="form-control" name="email" placeholder="you@example.com" required autofocus>
+                </div>
+              </div>
+              <div class="mb-4">
+                <label class="form-label fw-500">Password</label>
+                <div class="input-group">
+                  <span class="input-group-text"><i class="fas fa-lock text-muted"></i></span>
+                  <input type="password" class="form-control" name="password" id="loginPwd" placeholder="••••••••" required>
+                  <button class="btn btn-outline-secondary" type="button" onclick="togglePwd('loginPwd',this)">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                </div>
+              </div>
+              <button type="submit" class="btn btn-success w-100 btn-lg">
+                <i class="fas fa-sign-in-alt me-2"></i>Sign In
+              </button>
+            </form>
+            <hr class="my-4">
+            <div class="text-center">
+              <p class="text-muted small mb-2">Don't have an account?
+                <a href="{{ url_for('register') }}" class="text-success fw-600">Register Free</a>
+              </p>
+              <div class="demo-creds mt-3 p-3 rounded bg-light">
+                <small class="text-muted">
+                  <i class="fas fa-info-circle me-1"></i>
+                  <strong>Admin:</strong> admin@opticrop.ai / admin123
+                </small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function togglePwd(id, btn) {
+  const input = document.getElementById(id);
+  const icon  = btn.querySelector('i');
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.classList.replace('fa-eye', 'fa-eye-slash');
+  } else {
+    input.type = 'password';
+    icon.classList.replace('fa-eye-slash', 'fa-eye');
+  }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% block title %}About{% endblock %}
+
+{% block content %}
+
+<!-- Page Hero -->
+<section class="page-hero">
+  <div class="container text-center">
+    <span class="section-badge">About OptiCrop AI</span>
+    <h1 class="hero-title mt-2">Smart <span class="gradient-text">Agricultural</span> Intelligence</h1>
+    <p class="hero-subtitle mx-auto" style="max-width:600px">
+      An AI-powered crop recommendation engine built for SmartBridge Internship using
+      Machine Learning, Flask, and modern web technologies.
+    </p>
+  </div>
+</section>
+
+<section class="py-5">
+  <div class="container">
+
+    <!-- Project Description -->
+    <div class="row g-5 align-items-center mb-5">
+      <div class="col-lg-6">
+        <span class="section-badge">Project Overview</span>
+        <h2 class="section-title mt-2">What is <span class="gradient-text">OptiCrop AI</span>?</h2>
+        <p class="text-muted">
+          OptiCrop AI is an intelligent crop recommendation system that uses Machine Learning
+          to analyze soil and climate parameters and suggest the most suitable crop for cultivation.
+          It helps farmers make data-driven decisions to maximize yield and minimize resource waste.
+        </p>
+        <ul class="about-list">
+          <li><i class="fas fa-check-circle text-success me-2"></i>Analyzes 7 key soil & climate parameters</li>
+          <li><i class="fas fa-check-circle text-success me-2"></i>Recommends from 22 crop types</li>
+          <li><i class="fas fa-check-circle text-success me-2"></i>Provides confidence scores & crop details</li>
+          <li><i class="fas fa-check-circle text-success me-2"></i>Generates downloadable PDF reports</li>
+          <li><i class="fas fa-check-circle text-success me-2"></i>Tracks prediction history per user</li>
+        </ul>
+      </div>
+      <div class="col-lg-6">
+        <div class="about-info-card">
+          <div class="row g-3">
+            <div class="col-6">
+              <div class="info-box"><i class="fas fa-database text-success"></i><span>2200 Records</span></div>
+            </div>
+            <div class="col-6">
+              <div class="info-box"><i class="fas fa-leaf text-success"></i><span>22 Crops</span></div>
+            </div>
+            <div class="col-6">
+              <div class="info-box"><i class="fas fa-bullseye text-success"></i><span>99%+ Accuracy</span></div>
+            </div>
+            <div class="col-6">
+              <div class="info-box"><i class="fas fa-robot text-success"></i><span>Random Forest</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Business Problem -->
+    <div class="card border-0 shadow-sm mb-5 p-4">
+      <h4 class="fw-700 mb-3"><i class="fas fa-exclamation-triangle text-warning me-2"></i>Business Problem</h4>
+      <p class="text-muted mb-0">
+        Farmers often lack access to scientific soil analysis tools and expert agronomists.
+        Poor crop selection leads to low yields, financial losses, and environmental damage.
+        OptiCrop AI bridges this gap by providing instant, data-driven crop recommendations
+        accessible from any device — empowering farmers with AI at their fingertips.
+      </p>
+    </div>
+
+    <!-- ML Workflow -->
+    <div class="mb-5">
+      <div class="section-header text-center mb-4">
+        <span class="section-badge">ML Pipeline</span>
+        <h2 class="section-title mt-2">Machine Learning <span class="gradient-text">Workflow</span></h2>
+      </div>
+      <div class="row g-3">
+        {% set steps = [
+          ('fas fa-database','1. Data Collection','Crop_recommendation.csv with 2200 records, 7 features, 22 classes'),
+          ('fas fa-search','2. EDA','Heatmaps, boxplots, histograms, correlation matrix, pairplots'),
+          ('fas fa-broom','3. Preprocessing','Label encoding, StandardScaler normalization, train-test split (80/20)'),
+          ('fas fa-cogs','4. Model Training','LR, KNN, Decision Tree, Random Forest, Naive Bayes compared'),
+          ('fas fa-chart-bar','5. Evaluation','Accuracy, Precision, Recall, F1, Confusion Matrix'),
+          ('fas fa-save','6. Deployment','Best model saved with joblib, served via Flask REST API'),
+        ] %}
+        {% for icon, title, desc in steps %}
+        <div class="col-md-6 col-lg-4">
+          <div class="workflow-detail-card h-100">
+            <div class="workflow-detail-icon"><i class="{{ icon }}"></i></div>
+            <h6 class="fw-600">{{ title }}</h6>
+            <p class="text-muted small mb-0">{{ desc }}</p>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Tech Stack -->
+    <div class="mb-5">
+      <div class="section-header text-center mb-4">
+        <span class="section-badge">Technology</span>
+        <h2 class="section-title mt-2">Tech <span class="gradient-text">Stack</span></h2>
+      </div>
+      <div class="row g-3 justify-content-center">
+        {% set techs = [
+          ('fab fa-python','Python 3.11','Backend & ML','bg-blue-soft'),
+          ('fas fa-flask','Flask 3.0','Web Framework','bg-success-soft'),
+          ('fas fa-brain','Scikit-learn','Machine Learning','bg-orange-soft'),
+          ('fas fa-table','Pandas / NumPy','Data Processing','bg-purple-soft'),
+          ('fas fa-database','SQLite','Database','bg-info-soft'),
+          ('fab fa-bootstrap','Bootstrap 5','UI Framework','bg-warning-soft'),
+          ('fas fa-chart-bar','Chart.js','Visualizations','bg-pink-soft'),
+          ('fas fa-file-pdf','ReportLab','PDF Generation','bg-red-soft'),
+        ] %}
+        {% for icon, name, desc, bg in techs %}
+        <div class="col-6 col-md-4 col-lg-3">
+          <div class="tech-card text-center h-100 {{ bg }}">
+            <i class="{{ icon }} fa-2x mb-2 text-success"></i>
+            <div class="fw-600">{{ name }}</div>
+            <small class="text-muted">{{ desc }}</small>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Dataset Info -->
+    <div class="card border-0 shadow-sm mb-5">
+      <div class="card-header bg-transparent border-bottom">
+        <h5 class="mb-0 fw-700"><i class="fas fa-table text-success me-2"></i>Dataset Information</h5>
+      </div>
+      <div class="card-body">
+        <div class="row g-4">
+          <div class="col-md-6">
+            <table class="table table-sm">
+              <tbody>
+                <tr><td class="fw-500">Source</td><td>Kaggle – Crop Recommendation Dataset</td></tr>
+                <tr><td class="fw-500">Records</td><td>2200 rows</td></tr>
+                <tr><td class="fw-500">Features</td><td>7 input features</td></tr>
+                <tr><td class="fw-500">Target</td><td>22 crop classes</td></tr>
+                <tr><td class="fw-500">Missing Values</td><td>None</td></tr>
+                <tr><td class="fw-500">Format</td><td>CSV</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="col-md-6">
+            <h6 class="fw-600 mb-3">Input Features</h6>
+            <div class="d-flex flex-wrap gap-2">
+              {% for f in ['Nitrogen (N)','Phosphorous (P)','Potassium (K)','Temperature (°C)','Humidity (%)','Soil pH','Rainfall (mm)'] %}
+              <span class="badge bg-success-soft text-success px-3 py-2">{{ f }}</span>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Future Scope -->
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-transparent border-bottom">
+        <h5 class="mb-0 fw-700"><i class="fas fa-rocket text-success me-2"></i>Future Scope</h5>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          {% set future = [
+            ('fas fa-satellite','IoT Integration','Real-time soil sensor data via IoT devices'),
+            ('fas fa-mobile-alt','Mobile App','React Native app for field use'),
+            ('fas fa-cloud','Weather API','Live weather data integration'),
+            ('fas fa-language','Multilingual','Support for regional languages'),
+            ('fas fa-map','GIS Mapping','Location-based crop recommendations'),
+            ('fas fa-chart-line','Yield Prediction','Predict expected crop yield'),
+          ] %}
+          {% for icon, title, desc in future %}
+          <div class="col-md-6 col-lg-4">
+            <div class="d-flex gap-3 align-items-start">
+              <div class="future-icon"><i class="{{ icon }} text-success"></i></div>
+              <div>
+                <div class="fw-600 small">{{ title }}</div>
+                <div class="text-muted small">{{ desc }}</div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,9 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+database/opticrop.db
+static/images/*.png
+reports/
+.DS_Store

@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/dashboard.css') }}" rel="stylesheet"/>
+{% endblock %}
+
+{% block content %}
+<section class="py-4">
+  <div class="container-fluid px-4">
+
+    <!-- Welcome Banner -->
+    <div class="dashboard-welcome mb-4">
+      <div class="row align-items-center">
+        <div class="col">
+          <div class="d-flex align-items-center gap-3">
+            <div class="avatar-lg">{{ user.name[0].upper() }}</div>
+            <div>
+              <h4 class="mb-0 fw-700">Welcome back, {{ user.name.split()[0] }}! 👋</h4>
+              <p class="mb-0 text-white-75">{{ user.email }} &nbsp;|&nbsp; Farmer Account</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-auto">
+          <a href="{{ url_for('predict') }}" class="btn btn-light btn-lg">
+            <i class="fas fa-plus me-2"></i>New Prediction
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="row g-4 mb-4">
+      <div class="col-6 col-xl-3">
+        <div class="dash-stat-card">
+          <div class="dash-stat-icon bg-success-gradient"><i class="fas fa-seedling"></i></div>
+          <div class="dash-stat-body">
+            <div class="dash-stat-number">{{ total }}</div>
+            <div class="dash-stat-label">Total Predictions</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-xl-3">
+        <div class="dash-stat-card">
+          <div class="dash-stat-icon bg-blue-gradient"><i class="fas fa-leaf"></i></div>
+          <div class="dash-stat-body">
+            <div class="dash-stat-number">{{ crop_counts|fromjson|length if crop_counts else 0 }}</div>
+            <div class="dash-stat-label">Unique Crops</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-xl-3">
+        <div class="dash-stat-card">
+          <div class="dash-stat-icon bg-warning-gradient"><i class="fas fa-star"></i></div>
+          <div class="dash-stat-body">
+            <div class="dash-stat-number">
+              {% if predictions %}{{ predictions[0].confidence|round(1) }}%{% else %}–{% endif %}
+            </div>
+            <div class="dash-stat-label">Last Confidence</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-xl-3">
+        <div class="dash-stat-card">
+          <div class="dash-stat-icon bg-purple-gradient"><i class="fas fa-calendar"></i></div>
+          <div class="dash-stat-body">
+            <div class="dash-stat-number">
+              {% if predictions %}{{ predictions[0].date.strftime('%d %b') }}{% else %}–{% endif %}
+            </div>
+            <div class="dash-stat-label">Last Prediction</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <!-- Chart: Crop Distribution -->
+      <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-header bg-transparent border-bottom d-flex justify-content-between align-items-center">
+            <h6 class="mb-0 fw-600"><i class="fas fa-chart-pie me-2 text-success"></i>Crop Distribution</h6>
+          </div>
+          <div class="card-body d-flex align-items-center justify-content-center" style="min-height:280px">
+            {% if total > 0 %}
+            <canvas id="cropChart" height="260"></canvas>
+            {% else %}
+            <div class="text-center text-muted py-5">
+              <i class="fas fa-chart-pie fa-3x mb-3 opacity-25"></i>
+              <p>No predictions yet. <a href="{{ url_for('predict') }}">Make your first prediction!</a></p>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Predictions Table -->
+      <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-header bg-transparent border-bottom d-flex justify-content-between align-items-center">
+            <h6 class="mb-0 fw-600"><i class="fas fa-history me-2 text-success"></i>Recent Predictions</h6>
+            <a href="{{ url_for('history') }}" class="btn btn-sm btn-outline-success">View All</a>
+          </div>
+          <div class="card-body p-0">
+            {% if predictions %}
+            <div class="table-responsive">
+              <table class="table table-hover mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>Crop</th>
+                    <th>Confidence</th>
+                    <th>Date</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for p in predictions %}
+                  <tr>
+                    <td>
+                      <span class="crop-badge">{{ p.prediction | title }}</span>
+                    </td>
+                    <td>
+                      <div class="conf-bar-wrap">
+                        <div class="conf-bar" style="width:{{ p.confidence }}%"></div>
+                        <span>{{ p.confidence|round(1) }}%</span>
+                      </div>
+                    </td>
+                    <td class="text-muted small">{{ p.date.strftime('%d %b %Y') }}</td>
+                    <td>
+                      <a href="{{ url_for('download_report', pred_id=p.id) }}"
+                         class="btn btn-xs btn-outline-success" title="Download PDF">
+                        <i class="fas fa-download"></i>
+                      </a>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% else %}
+            <div class="text-center text-muted py-5">
+              <i class="fas fa-seedling fa-3x mb-3 opacity-25"></i>
+              <p>No predictions yet.</p>
+              <a href="{{ url_for('predict') }}" class="btn btn-success btn-sm">Make First Prediction</a>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const cropData = {{ crop_counts | safe }};
+if (Object.keys(cropData).length > 0) {
+  const labels = Object.keys(cropData).map(k => k.charAt(0).toUpperCase() + k.slice(1));
+  const values = Object.values(cropData);
+  const colors = ['#2d6a4f','#40916c','#52b788','#74c69d','#95d5b2','#b7e4c7',
+                  '#1b4332','#081c15','#d8f3dc','#f0fdf4','#a8dadc','#457b9d'];
+
+  new Chart(document.getElementById('cropChart'), {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data: values, backgroundColor: colors, borderWidth: 2 }] },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'right', labels: { font: { size: 12 } } },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw} predictions` } }
+      }
+    }
+  });
+}
+</script>
+{% endblock %}
