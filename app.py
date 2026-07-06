@@ -24,9 +24,14 @@ from reportlab.lib.units import inch
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 app = Flask(__name__)
-app.config['SECRET_KEY']          = 'opticrop-secret-key-2024'
-app.config['SQLALCHEMY_DATABASE_URI'] = (
-    'sqlite:///' + os.path.join(BASE_DIR, 'database', 'opticrop.db'))
+# Use /tmp on Render (writable), local database/ folder otherwise
+if os.environ.get('RENDER'):
+    DB_PATH = '/tmp/opticrop.db'
+else:
+    DB_PATH = os.path.join(BASE_DIR, 'database', 'opticrop.db')
+
+app.config['SECRET_KEY']          = os.environ.get('SECRET_KEY', 'opticrop-secret-key-2024')
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + DB_PATH
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db    = SQLAlchemy(app)
@@ -450,7 +455,10 @@ def forbidden(e):
 
 # ── Init DB & Seed Admin ───────────────────────────────────────────────────────
 def init_db():
-    os.makedirs(os.path.join(BASE_DIR, 'database'), exist_ok=True)
+    if not os.environ.get('RENDER'):
+        os.makedirs(os.path.join(BASE_DIR, 'database'), exist_ok=True)
+    os.makedirs(os.path.join(BASE_DIR, 'model'), exist_ok=True)
+    os.makedirs(os.path.join(BASE_DIR, 'static', 'images'), exist_ok=True)
     with app.app_context():
         db.create_all()
         if not User.query.filter_by(role='admin').first():
