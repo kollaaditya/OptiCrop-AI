@@ -151,7 +151,7 @@
                 <td>{{ u.predictions|length }}</td>
                 <td>
                   {% if u.role != 'admin' %}
-                  <form method="POST" action="{{ url_for('delete_user', user_id=u.id) }}"
+                  <form method="POST" action="{{ url_for('delete_user', user_id=u._id|string) }}"
                         onsubmit="return confirm('Delete user {{ u.name }}?')">
                     <button type="submit" class="btn btn-xs btn-outline-danger">
                       <i class="fas fa-trash"></i>
@@ -188,7 +188,7 @@
                 <td><span class="badge bg-success">{{ p.confidence|round(1) }}%</span></td>
                 <td class="text-muted small">{{ p.date.strftime('%d %b %Y %H:%M') }}</td>
                 <td>
-                  <a href="{{ url_for('download_report', pred_id=p.id) }}"
+                  <a href="{{ url_for('download_report', pred_id=p._id|string) }}"
                      class="btn btn-xs btn-outline-success">
                     <i class="fas fa-download"></i>
                   </a>

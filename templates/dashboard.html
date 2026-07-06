@@ -125,7 +125,7 @@
                     </td>
                     <td class="text-muted small">{{ p.date.strftime('%d %b %Y') }}</td>
                     <td>
-                      <a href="{{ url_for('download_report', pred_id=p.id) }}"
+                      <a href="{{ url_for('download_report', pred_id=p._id|string) }}"
                          class="btn btn-xs btn-outline-success" title="Download PDF">
                         <i class="fas fa-download"></i>
                       </a>

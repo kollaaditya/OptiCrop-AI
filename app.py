@@ -1,19 +1,20 @@
 """
-OptiCrop AI – Flask Application
+OptiCrop AI – Flask Application (MongoDB Version)
 Smart Agricultural Production Optimization Engine
 """
 
-import os, io, json, base64
+import os, io, json
 from datetime import datetime
 from functools import wraps
+from bson import ObjectId
 
 import joblib
 import numpy as np
 import pandas as pd
 from flask import (Flask, render_template, request, redirect, url_for,
                    flash, session, jsonify, send_file, abort)
-from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
+from pymongo import MongoClient
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -24,49 +25,19 @@ from reportlab.lib.units import inch
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 app = Flask(__name__)
-app.config['SECRET_KEY']          = 'opticrop-secret-key-2024'
-app.config['SQLALCHEMY_DATABASE_URI'] = (
-    'sqlite:///' + os.path.join(BASE_DIR, 'database', 'opticrop.db'))
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'opticrop-secret-key-2024')
 
-db    = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 
-# ── Database Models ────────────────────────────────────────────────────────────
-class User(db.Model):
-    __tablename__ = 'users'
-    id       = db.Column(db.Integer, primary_key=True)
-    name     = db.Column(db.String(100), nullable=False)
-    email    = db.Column(db.String(120), unique=True, nullable=False)
-    password = db.Column(db.String(200), nullable=False)
-    role     = db.Column(db.String(20), default='farmer')
-    created  = db.Column(db.DateTime, default=datetime.utcnow)
-    predictions = db.relationship('Prediction', backref='user', lazy=True,
-                                  cascade='all, delete-orphan')
+# ── MongoDB Connection ─────────────────────────────────────────────────────────
+MONGO_URI = os.environ.get('MONGO_URI', 'mongodb+srv://Trust-Hire:Adi1223@aditya.csnpva1.mongodb.net/opticrop?appName=Aditya')
+client     = MongoClient(MONGO_URI)
+db_mongo   = client.get_database('opticrop')
 
-class Prediction(db.Model):
-    __tablename__ = 'predictions'
-    id          = db.Column(db.Integer, primary_key=True)
-    user_id     = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    nitrogen    = db.Column(db.Float)
-    phosphorous = db.Column(db.Float)
-    potassium   = db.Column(db.Float)
-    temperature = db.Column(db.Float)
-    humidity    = db.Column(db.Float)
-    ph          = db.Column(db.Float)
-    rainfall    = db.Column(db.Float)
-    prediction  = db.Column(db.String(50))
-    confidence  = db.Column(db.Float)
-    date        = db.Column(db.DateTime, default=datetime.utcnow)
-
-class Contact(db.Model):
-    __tablename__ = 'contacts'
-    id      = db.Column(db.Integer, primary_key=True)
-    name    = db.Column(db.String(100))
-    email   = db.Column(db.String(120))
-    subject = db.Column(db.String(200))
-    message = db.Column(db.Text)
-    date    = db.Column(db.DateTime, default=datetime.utcnow)
+# Collections
+users_col       = db_mongo['users']
+predictions_col = db_mongo['predictions']
+contacts_col    = db_mongo['contacts']
 
 # ── Load ML Model ──────────────────────────────────────────────────────────────
 MODEL_DIR = os.path.join(BASE_DIR, 'model')
@@ -77,7 +48,8 @@ def load_model():
         scaler  = joblib.load(os.path.join(MODEL_DIR, 'scaler.pkl'))
         encoder = joblib.load(os.path.join(MODEL_DIR, 'label_encoder.pkl'))
         return model, scaler, encoder
-    except Exception:
+    except Exception as e:
+        print(f"Model load error: {e}")
         return None, None, None
 
 ml_model, ml_scaler, ml_encoder = load_model()
@@ -114,6 +86,12 @@ def get_crop_info(crop_name):
         'ph':'6.0-7.0', 'water':'800mm', 'fertilizer':'NPK Balanced', 'emoji':'🌱'
     })
 
+# ── Helper: ObjectId to str ────────────────────────────────────────────────────
+def str_id(doc):
+    if doc and '_id' in doc:
+        doc['_id'] = str(doc['_id'])
+    return doc
+
 # ── Auth Decorators ────────────────────────────────────────────────────────────
 def login_required(f):
     @wraps(f)
@@ -129,18 +107,28 @@ def admin_required(f):
     def decorated(*args, **kwargs):
         if 'user_id' not in session:
             return redirect(url_for('login'))
-        user = User.query.get(session['user_id'])
-        if not user or user.role != 'admin':
+        if session.get('user_role') != 'admin':
             abort(403)
         return f(*args, **kwargs)
     return decorated
 
-# ── Routes ─────────────────────────────────────────────────────────────────────
+# ── Jinja Globals ──────────────────────────────────────────────────────────────
+@app.context_processor
+def inject_globals():
+    return {'now': datetime.utcnow}
 
+@app.template_filter('fromjson')
+def fromjson_filter(s):
+    try:
+        return json.loads(s)
+    except Exception:
+        return {}
+
+# ── Routes ─────────────────────────────────────────────────────────────────────
 @app.route('/')
 def index():
-    total_predictions = Prediction.query.count()
-    total_users       = User.query.count()
+    total_predictions = predictions_col.count_documents({})
+    total_users       = users_col.count_documents({})
     return render_template('index.html',
                            total_predictions=total_predictions,
                            total_users=total_users)
@@ -152,15 +140,14 @@ def about():
 @app.route('/contact', methods=['GET', 'POST'])
 def contact():
     if request.method == 'POST':
-        c = Contact(
-            name    = request.form.get('name'),
-            email   = request.form.get('email'),
-            subject = request.form.get('subject'),
-            message = request.form.get('message'),
-        )
-        db.session.add(c)
-        db.session.commit()
-        flash('Message sent successfully! We will get back to you soon.', 'success')
+        contacts_col.insert_one({
+            'name':    request.form.get('name'),
+            'email':   request.form.get('email'),
+            'subject': request.form.get('subject'),
+            'message': request.form.get('message'),
+            'date':    datetime.utcnow()
+        })
+        flash('Message sent successfully!', 'success')
         return redirect(url_for('contact'))
     return render_template('contact.html')
 
@@ -181,14 +168,18 @@ def register():
         if password != confirm:
             flash('Passwords do not match.', 'danger')
             return render_template('register.html')
-        if User.query.filter_by(email=email).first():
+        if users_col.find_one({'email': email}):
             flash('Email already registered.', 'danger')
             return render_template('register.html')
 
         hashed = bcrypt.generate_password_hash(password).decode('utf-8')
-        user   = User(name=name, email=email, password=hashed)
-        db.session.add(user)
-        db.session.commit()
+        users_col.insert_one({
+            'name':     name,
+            'email':    email,
+            'password': hashed,
+            'role':     'farmer',
+            'created':  datetime.utcnow()
+        })
         flash('Registration successful! Please login.', 'success')
         return redirect(url_for('login'))
     return render_template('register.html')
@@ -200,13 +191,13 @@ def login():
     if request.method == 'POST':
         email    = request.form.get('email', '').strip().lower()
         password = request.form.get('password', '')
-        user     = User.query.filter_by(email=email).first()
-        if user and bcrypt.check_password_hash(user.password, password):
-            session['user_id']   = user.id
-            session['user_name'] = user.name
-            session['user_role'] = user.role
-            flash(f'Welcome back, {user.name}!', 'success')
-            return redirect(url_for('admin_dashboard') if user.role == 'admin'
+        user     = users_col.find_one({'email': email})
+        if user and bcrypt.check_password_hash(user['password'], password):
+            session['user_id']   = str(user['_id'])
+            session['user_name'] = user['name']
+            session['user_role'] = user['role']
+            flash(f"Welcome back, {user['name']}!", 'success')
+            return redirect(url_for('admin_dashboard') if user['role'] == 'admin'
                             else url_for('dashboard'))
         flash('Invalid email or password.', 'danger')
     return render_template('login.html')
@@ -221,19 +212,22 @@ def logout():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    user  = User.query.get(session['user_id'])
-    preds = Prediction.query.filter_by(user_id=user.id)\
-                            .order_by(Prediction.date.desc()).limit(10).all()
-    total = Prediction.query.filter_by(user_id=user.id).count()
+    user  = users_col.find_one({'_id': ObjectId(session['user_id'])})
+    preds = list(predictions_col.find(
+        {'user_id': session['user_id']}
+    ).sort('date', -1).limit(10))
 
-    # Chart data
-    all_preds = Prediction.query.filter_by(user_id=user.id).all()
+    total = predictions_col.count_documents({'user_id': session['user_id']})
+
     crop_counts = {}
-    for p in all_preds:
-        crop_counts[p.prediction] = crop_counts.get(p.prediction, 0) + 1
+    for p in predictions_col.find({'user_id': session['user_id']}):
+        crop = p.get('prediction', '')
+        crop_counts[crop] = crop_counts.get(crop, 0) + 1
 
-    return render_template('dashboard.html', user=user, predictions=preds,
-                           total=total, crop_counts=json.dumps(crop_counts))
+    return render_template('dashboard.html',
+                           user=user, predictions=preds,
+                           total=total,
+                           crop_counts=json.dumps(crop_counts))
 
 # ── Prediction ─────────────────────────────────────────────────────────────────
 @app.route('/predict', methods=['GET', 'POST'])
@@ -258,27 +252,32 @@ def predict():
             flash('ML model not loaded. Please run train_model.py first.', 'danger')
             return render_template('predict.html')
 
-        arr     = np.array([vals])
-        scaled  = ml_scaler.transform(arr)
-        pred_idx = ml_model.predict(scaled)[0]
-        proba   = ml_model.predict_proba(scaled)[0]
+        arr        = np.array([vals])
+        scaled     = ml_scaler.transform(arr)
+        pred_idx   = ml_model.predict(scaled)[0]
+        proba      = ml_model.predict_proba(scaled)[0]
         confidence = round(float(np.max(proba)) * 100, 2)
         crop_name  = ml_encoder.inverse_transform([pred_idx])[0]
 
-        # Save to DB
-        p = Prediction(
-            user_id=session['user_id'],
-            nitrogen=vals[0], phosphorous=vals[1], potassium=vals[2],
-            temperature=vals[3], humidity=vals[4], ph=vals[5], rainfall=vals[6],
-            prediction=crop_name, confidence=confidence,
-        )
-        db.session.add(p)
-        db.session.commit()
+        result = predictions_col.insert_one({
+            'user_id':     session['user_id'],
+            'user_name':   session['user_name'],
+            'nitrogen':    vals[0],
+            'phosphorous': vals[1],
+            'potassium':   vals[2],
+            'temperature': vals[3],
+            'humidity':    vals[4],
+            'ph':          vals[5],
+            'rainfall':    vals[6],
+            'prediction':  crop_name,
+            'confidence':  confidence,
+            'date':        datetime.utcnow()
+        })
 
         info = get_crop_info(crop_name)
         return render_template('result.html',
                                crop=crop_name, confidence=confidence,
-                               info=info, pred_id=p.id,
+                               info=info, pred_id=str(result.inserted_id),
                                inputs=dict(zip(
                                    ['Nitrogen','Phosphorous','Potassium',
                                     'Temperature','Humidity','pH','Rainfall'], vals)))
@@ -288,29 +287,46 @@ def predict():
 @app.route('/history')
 @login_required
 def history():
-    page  = request.args.get('page', 1, type=int)
-    query = request.args.get('q', '')
-    base  = Prediction.query.filter_by(user_id=session['user_id'])
+    page    = request.args.get('page', 1, type=int)
+    query   = request.args.get('q', '')
+    per_page = 10
+
+    filter_q = {'user_id': session['user_id']}
     if query:
-        base = base.filter(Prediction.prediction.ilike(f'%{query}%'))
-    preds = base.order_by(Prediction.date.desc()).paginate(page=page, per_page=10)
-    return render_template('history.html', predictions=preds, query=query)
+        filter_q['prediction'] = {'$regex': query, '$options': 'i'}
+
+    total  = predictions_col.count_documents(filter_q)
+    preds  = list(predictions_col.find(filter_q)
+                  .sort('date', -1)
+                  .skip((page - 1) * per_page)
+                  .limit(per_page))
+
+    total_pages = (total + per_page - 1) // per_page
+
+    return render_template('history.html',
+                           predictions=preds,
+                           query=query,
+                           page=page,
+                           total_pages=total_pages,
+                           total=total)
 
 # ── PDF Report ─────────────────────────────────────────────────────────────────
-@app.route('/download_report/<int:pred_id>')
+@app.route('/download_report/<pred_id>')
 @login_required
 def download_report(pred_id):
-    p    = Prediction.query.get_or_404(pred_id)
-    user = User.query.get(session['user_id'])
-    if p.user_id != user.id and user.role != 'admin':
+    p    = predictions_col.find_one({'_id': ObjectId(pred_id)})
+    if not p:
+        abort(404)
+    if p['user_id'] != session['user_id'] and session.get('user_role') != 'admin':
         abort(403)
 
-    info = get_crop_info(p.prediction)
+    user = users_col.find_one({'_id': ObjectId(session['user_id'])})
+    info = get_crop_info(p['prediction'])
     buf  = io.BytesIO()
     doc  = SimpleDocTemplate(buf, pagesize=A4,
                               rightMargin=inch*0.75, leftMargin=inch*0.75,
                               topMargin=inch, bottomMargin=inch)
-    styles = getSampleStyleSheet()
+    styles    = getSampleStyleSheet()
     title_style = ParagraphStyle('title', parent=styles['Title'],
                                  textColor=colors.HexColor('#2d6a4f'), fontSize=22)
     h2_style    = ParagraphStyle('h2', parent=styles['Heading2'],
@@ -319,23 +335,23 @@ def download_report(pred_id):
         Paragraph("🌿 OptiCrop AI – Crop Recommendation Report", title_style),
         Spacer(1, 0.2*inch),
         Paragraph(f"Generated: {datetime.now().strftime('%d %B %Y, %I:%M %p')}", styles['Normal']),
-        Paragraph(f"Farmer: {user.name}  |  Email: {user.email}", styles['Normal']),
+        Paragraph(f"Farmer: {user['name']}  |  Email: {user['email']}", styles['Normal']),
         Spacer(1, 0.3*inch),
         Paragraph("Recommended Crop", h2_style),
-        Paragraph(f"<b>{p.prediction.upper()}</b>  –  Confidence: {p.confidence:.1f}%", styles['Normal']),
+        Paragraph(f"<b>{p['prediction'].upper()}</b>  –  Confidence: {p['confidence']:.1f}%", styles['Normal']),
         Spacer(1, 0.2*inch),
         Paragraph("Soil Input Parameters", h2_style),
     ]
 
     input_data = [
         ['Parameter', 'Value', 'Unit'],
-        ['Nitrogen (N)',    p.nitrogen,    'mg/kg'],
-        ['Phosphorous (P)', p.phosphorous, 'mg/kg'],
-        ['Potassium (K)',   p.potassium,   'mg/kg'],
-        ['Temperature',     p.temperature, '°C'],
-        ['Humidity',        p.humidity,    '%'],
-        ['Soil pH',         p.ph,          ''],
-        ['Rainfall',        p.rainfall,    'mm'],
+        ['Nitrogen (N)',    p['nitrogen'],    'mg/kg'],
+        ['Phosphorous (P)', p['phosphorous'], 'mg/kg'],
+        ['Potassium (K)',   p['potassium'],   'mg/kg'],
+        ['Temperature',     p['temperature'], '°C'],
+        ['Humidity',        p['humidity'],    '%'],
+        ['Soil pH',         p['ph'],          ''],
+        ['Rainfall',        p['rainfall'],    'mm'],
     ]
     t = Table(input_data, colWidths=[2.5*inch, 2*inch, 1.5*inch])
     t.setStyle(TableStyle([
@@ -350,11 +366,11 @@ def download_report(pred_id):
 
     crop_data = [
         ['Property', 'Value'],
-        ['Season',              info['season']],
-        ['Ideal Temperature',   info['temp']],
-        ['Ideal Humidity',      info['humidity']],
-        ['Ideal pH',            info['ph']],
-        ['Water Requirement',   info['water']],
+        ['Season',                 info['season']],
+        ['Ideal Temperature',      info['temp']],
+        ['Ideal Humidity',         info['humidity']],
+        ['Ideal pH',               info['ph']],
+        ['Water Requirement',      info['water']],
         ['Recommended Fertilizer', info['fertilizer']],
     ]
     t2 = Table(crop_data, colWidths=[3*inch, 3*inch])
@@ -372,26 +388,24 @@ def download_report(pred_id):
     doc.build(story)
     buf.seek(0)
     return send_file(buf, as_attachment=True,
-                     download_name=f'OptiCrop_Report_{p.prediction}_{pred_id}.pdf',
+                     download_name=f"OptiCrop_Report_{p['prediction']}_{pred_id}.pdf",
                      mimetype='application/pdf')
 
 # ── Admin ──────────────────────────────────────────────────────────────────────
 @app.route('/admin')
 @admin_required
 def admin_dashboard():
-    users        = User.query.order_by(User.created.desc()).all()
-    predictions  = Prediction.query.order_by(Prediction.date.desc()).limit(20).all()
-    total_users  = User.query.count()
-    total_preds  = Prediction.query.count()
-    contacts     = Contact.query.order_by(Contact.date.desc()).all()
+    users       = list(users_col.find().sort('created', -1))
+    predictions = list(predictions_col.find().sort('date', -1).limit(20))
+    total_users = users_col.count_documents({})
+    total_preds = predictions_col.count_documents({})
+    contacts    = list(contacts_col.find().sort('date', -1))
 
-    # Crop frequency for chart
-    all_preds = Prediction.query.all()
     crop_freq = {}
-    for p in all_preds:
-        crop_freq[p.prediction] = crop_freq.get(p.prediction, 0) + 1
+    for p in predictions_col.find():
+        c = p.get('prediction', '')
+        crop_freq[c] = crop_freq.get(c, 0) + 1
 
-    # Load model metrics
     metrics_path = os.path.join(BASE_DIR, 'model', 'metrics.csv')
     metrics = []
     if os.path.exists(metrics_path):
@@ -400,19 +414,22 @@ def admin_dashboard():
     return render_template('admin.html',
                            users=users, predictions=predictions,
                            total_users=total_users, total_preds=total_preds,
-                           contacts=contacts, crop_freq=json.dumps(crop_freq),
+                           contacts=contacts,
+                           crop_freq=json.dumps(crop_freq),
                            metrics=metrics)
 
-@app.route('/admin/delete_user/<int:user_id>', methods=['POST'])
+@app.route('/admin/delete_user/<user_id>', methods=['POST'])
 @admin_required
 def delete_user(user_id):
-    user = User.query.get_or_404(user_id)
-    if user.role == 'admin':
+    user = users_col.find_one({'_id': ObjectId(user_id)})
+    if not user:
+        abort(404)
+    if user['role'] == 'admin':
         flash('Cannot delete admin account.', 'danger')
     else:
-        db.session.delete(user)
-        db.session.commit()
-        flash(f'User {user.name} deleted.', 'success')
+        users_col.delete_one({'_id': ObjectId(user_id)})
+        predictions_col.delete_many({'user_id': user_id})
+        flash(f"User {user['name']} deleted.", 'success')
     return redirect(url_for('admin_dashboard'))
 
 # ── API ────────────────────────────────────────────────────────────────────────
@@ -430,10 +447,10 @@ def api_predict():
     if ml_model is None:
         return jsonify({'error': 'Model not loaded'}), 500
 
-    scaled    = ml_scaler.transform([vals])
-    pred_idx  = ml_model.predict(scaled)[0]
-    proba     = ml_model.predict_proba(scaled)[0]
-    crop_name = ml_encoder.inverse_transform([pred_idx])[0]
+    scaled     = ml_scaler.transform([vals])
+    pred_idx   = ml_model.predict(scaled)[0]
+    proba      = ml_model.predict_proba(scaled)[0]
+    crop_name  = ml_encoder.inverse_transform([pred_idx])[0]
     confidence = round(float(np.max(proba)) * 100, 2)
     info = get_crop_info(crop_name)
     return jsonify({'crop': crop_name, 'confidence': confidence, 'info': info})
@@ -445,41 +462,22 @@ def not_found(e):
 
 @app.errorhandler(403)
 def forbidden(e):
-    return render_template('404.html', code=403,
-                           message="Access Forbidden"), 403
+    return render_template('404.html', code=403, message="Access Forbidden"), 403
 
-# ── Init DB & Seed Admin ───────────────────────────────────────────────────────
-def init_db():
-    os.makedirs(os.path.join(BASE_DIR, 'database'), exist_ok=True)
-    with app.app_context():
-        db.create_all()
-        if not User.query.filter_by(role='admin').first():
-            admin = User(
-                name     = 'Admin',
-                email    = 'admin@opticrop.ai',
-                password = bcrypt.generate_password_hash('admin123').decode('utf-8'),
-                role     = 'admin',
-            )
-            db.session.add(admin)
-            db.session.commit()
-            print("Admin seeded: admin@opticrop.ai / admin123")
+# ── Seed Admin ─────────────────────────────────────────────────────────────────
+def seed_admin():
+    if not users_col.find_one({'role': 'admin'}):
+        users_col.insert_one({
+            'name':     'Admin',
+            'email':    'admin@opticrop.ai',
+            'password': bcrypt.generate_password_hash('admin123').decode('utf-8'),
+            'role':     'admin',
+            'created':  datetime.utcnow()
+        })
+        print("Admin seeded: admin@opticrop.ai / admin123")
 
-# ── Jinja Globals & Filters ───────────────────────────────────────────────────
-import json as _json
-
-@app.context_processor
-def inject_globals():
-    return {'now': datetime.utcnow}
-
-@app.template_filter('fromjson')
-def fromjson_filter(s):
-    try:
-        return _json.loads(s)
-    except Exception:
-        return {}
-
-# Initialize DB on startup (works for both local and Render)
-init_db()
+# Run seed on startup
+seed_admin()
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
