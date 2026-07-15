@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}Prediction History{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h3 class="fw-700 mb-1"><i class="fas fa-history text-success me-2"></i>Prediction History</h3>
+        <p class="text-muted mb-0">All your crop predictions — {{ total }} total</p>
+      </div>
+      <a href="{{ url_for('predict') }}" class="btn btn-success">
+        <i class="fas fa-plus me-2"></i>New Prediction
+      </a>
+    </div>
+
+    <!-- Search -->
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-body">
+        <form method="GET" action="{{ url_for('history') }}" class="d-flex gap-3">
+          <div class="input-group">
+            <span class="input-group-text"><i class="fas fa-search text-muted"></i></span>
+            <input type="text" class="form-control" name="q" value="{{ query }}"
+                   placeholder="Search by crop name...">
+          </div>
+          <button type="submit" class="btn btn-success px-4">Search</button>
+          {% if query %}
+          <a href="{{ url_for('history') }}" class="btn btn-outline-secondary px-4">Clear</a>
+          {% endif %}
+        </form>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="card border-0 shadow-sm">
+      <div class="card-body p-0">
+        {% if predictions %}
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-success">
+              <tr>
+                <th>#</th>
+                <th>Crop</th>
+                <th>N</th><th>P</th><th>K</th>
+                <th>Temp</th><th>Humidity</th><th>pH</th><th>Rainfall</th>
+                <th>Confidence</th>
+                <th>Date</th>
+                <th>Report</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for p in predictions %}
+              <tr>
+                <td class="text-muted small">{{ loop.index + (page-1)*10 }}</td>
+                <td><span class="crop-badge">{{ p.prediction | title }}</span></td>
+                <td>{{ p.nitrogen }}</td>
+                <td>{{ p.phosphorous }}</td>
+                <td>{{ p.potassium }}</td>
+                <td>{{ p.temperature }}°C</td>
+                <td>{{ p.humidity }}%</td>
+                <td>{{ p.ph }}</td>
+                <td>{{ p.rainfall }}mm</td>
+                <td><span class="badge bg-success">{{ p.confidence|round(1) }}%</span></td>
+                <td class="text-muted small">{{ p.date.strftime('%d %b %Y') }}</td>
+                <td>
+                  <a href="{{ url_for('download_report', pred_id=p._id|string) }}"
+                     class="btn btn-xs btn-outline-success">
+                    <i class="fas fa-file-pdf"></i>
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if total_pages > 1 %}
+        <div class="d-flex justify-content-center py-3">
+          <nav>
+            <ul class="pagination pagination-sm mb-0">
+              {% if page > 1 %}
+              <li class="page-item">
+                <a class="page-link" href="{{ url_for('history', page=page-1, q=query) }}">
+                  <i class="fas fa-chevron-left"></i>
+                </a>
+              </li>
+              {% endif %}
+              {% for p in range(1, total_pages+1) %}
+              <li class="page-item {% if p == page %}active{% endif %}">
+                <a class="page-link" href="{{ url_for('history', page=p, q=query) }}">{{ p }}</a>
+              </li>
+              {% endfor %}
+              {% if page < total_pages %}
+              <li class="page-item">
+                <a class="page-link" href="{{ url_for('history', page=page+1, q=query) }}">
+                  <i class="fas fa-chevron-right"></i>
+                </a>
+              </li>
+              {% endif %}
+            </ul>
+          </nav>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="text-center py-5 text-muted">
+          <i class="fas fa-seedling fa-3x mb-3 opacity-25"></i>
+          <p>{% if query %}No predictions found for "{{ query }}".{% else %}No predictions yet.{% endif %}</p>
+          <a href="{{ url_for('predict') }}" class="btn btn-success btn-sm">Make First Prediction</a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/dashboard.css') }}" rel="stylesheet"/>
+{% endblock %}
+
+{% block content %}
+<section class="py-4">
+  <div class="container-fluid px-4">
+
+    <!-- Admin Header -->
+    <div class="admin-header mb-4">
+      <div class="row align-items-center">
+        <div class="col">
+          <h4 class="fw-700 mb-1 text-white"><i class="fas fa-shield-alt me-2"></i>Admin Control Panel</h4>
+          <p class="mb-0 text-white-75">OptiCrop AI – System Administration</p>
+        </div>
+        <div class="col-auto">
+          <span class="badge bg-light text-dark px-3 py-2">
+            <i class="fas fa-circle text-success me-1"></i>System Online
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="row g-4 mb-4">
+      <div class="col-6 col-xl-3">
+        <div class="dash-stat-card">
+          <div class="dash-stat-icon bg-success-gradient"><i class="fas fa-users"></i></div>
+          <div class="dash-stat-body">
+            <div class="dash-stat-number">{{ total_users }}</div>
+            <div class="dash-stat-label">Total Users</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-xl-3">
+        <div class="dash-stat-card">
+          <div class="dash-stat-icon bg-blue-gradient"><i class="fas fa-brain"></i></div>
+          <div class="dash-stat-body">
+            <div class="dash-stat-number">{{ total_preds }}</div>
+            <div class="dash-stat-label">Total Predictions</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-xl-3">
+        <div class="dash-stat-card">
+          <div class="dash-stat-icon bg-warning-gradient"><i class="fas fa-envelope"></i></div>
+          <div class="dash-stat-body">
+            <div class="dash-stat-number">{{ contacts|length }}</div>
+            <div class="dash-stat-label">Contact Messages</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-xl-3">
+        <div class="dash-stat-card">
+          <div class="dash-stat-icon bg-purple-gradient"><i class="fas fa-bullseye"></i></div>
+          <div class="dash-stat-body">
+            <div class="dash-stat-number">99%+</div>
+            <div class="dash-stat-label">RF Accuracy</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+      <!-- Crop Frequency Chart -->
+      <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-header bg-transparent border-bottom">
+            <h6 class="mb-0 fw-600"><i class="fas fa-chart-bar me-2 text-success"></i>Crop Prediction Frequency</h6>
+          </div>
+          <div class="card-body" style="min-height:280px">
+            {% if total_preds > 0 %}
+            <canvas id="cropFreqChart" height="260"></canvas>
+            {% else %}
+            <div class="text-center text-muted py-5">No predictions yet.</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Model Metrics -->
+      <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-header bg-transparent border-bottom">
+            <h6 class="mb-0 fw-600"><i class="fas fa-robot me-2 text-success"></i>Model Performance</h6>
+          </div>
+          <div class="card-body p-0">
+            {% if metrics %}
+            <div class="table-responsive">
+              <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                  <tr><th>Model</th><th>Accuracy</th><th>Precision</th><th>F1</th></tr>
+                </thead>
+                <tbody>
+                  {% for m in metrics %}
+                  <tr>
+                    <td class="fw-500">{{ m.model }}</td>
+                    <td>
+                      <div class="conf-bar-wrap">
+                        <div class="conf-bar" style="width:{{ (m.accuracy*100)|round(1) }}%"></div>
+                        <span>{{ (m.accuracy*100)|round(2) }}%</span>
+                      </div>
+                    </td>
+                    <td>{{ (m.precision*100)|round(2) }}%</td>
+                    <td>{{ (m.f1*100)|round(2) }}%</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% else %}
+            <div class="text-center text-muted py-4">
+              <p>Run <code>python train_model.py</code> to generate metrics.</p>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-header bg-transparent border-bottom">
+        <h6 class="mb-0 fw-600"><i class="fas fa-users me-2 text-success"></i>Registered Users</h6>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr><th>#</th><th>Name</th><th>Email</th><th>Role</th><th>Joined</th><th>Predictions</th><th>Action</th></tr>
+            </thead>
+            <tbody>
+              {% for u in users %}
+              <tr>
+                <td class="text-muted small">{{ loop.index }}</td>
+                <td>
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="avatar-sm">{{ u.name[0].upper() }}</div>
+                    {{ u.name }}
+                  </div>
+                </td>
+                <td class="text-muted small">{{ u.email }}</td>
+                <td>
+                  <span class="badge {% if u.role=='admin' %}bg-danger{% else %}bg-success{% endif %}">
+                    {{ u.role | title }}
+                  </span>
+                </td>
+                <td class="text-muted small">{{ u.created.strftime('%d %b %Y') }}</td>
+                <td>{{ u.predictions|length }}</td>
+                <td>
+                  {% if u.role != 'admin' %}
+                  <form method="POST" action="{{ url_for('delete_user', user_id=u._id|string) }}"
+                        onsubmit="return confirm('Delete user {{ u.name }}?')">
+                    <button type="submit" class="btn btn-xs btn-outline-danger">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </form>
+                  {% else %}
+                  <span class="text-muted small">–</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Predictions -->
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-header bg-transparent border-bottom">
+        <h6 class="mb-0 fw-600"><i class="fas fa-history me-2 text-success"></i>Recent Predictions (All Users)</h6>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr><th>User</th><th>Crop</th><th>Confidence</th><th>Date</th><th>Report</th></tr>
+            </thead>
+            <tbody>
+              {% for p in predictions %}
+              <tr>
+                <td class="small">{{ p.user.name }}</td>
+                <td><span class="crop-badge">{{ p.prediction | title }}</span></td>
+                <td><span class="badge bg-success">{{ p.confidence|round(1) }}%</span></td>
+                <td class="text-muted small">{{ p.date.strftime('%d %b %Y %H:%M') }}</td>
+                <td>
+                  <a href="{{ url_for('download_report', pred_id=p._id|string) }}"
+                     class="btn btn-xs btn-outline-success">
+                    <i class="fas fa-download"></i>
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contact Messages -->
+    {% if contacts %}
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-transparent border-bottom">
+        <h6 class="mb-0 fw-600"><i class="fas fa-envelope me-2 text-success"></i>Contact Messages</h6>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr><th>Name</th><th>Email</th><th>Subject</th><th>Date</th></tr>
+            </thead>
+            <tbody>
+              {% for c in contacts %}
+              <tr>
+                <td>{{ c.name }}</td>
+                <td class="text-muted small">{{ c.email }}</td>
+                <td>{{ c.subject }}</td>
+                <td class="text-muted small">{{ c.date.strftime('%d %b %Y') }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const cropFreq = {{ crop_freq | safe }};
+if (Object.keys(cropFreq).length > 0) {
+  const labels = Object.keys(cropFreq).map(k => k.charAt(0).toUpperCase() + k.slice(1));
+  const values = Object.values(cropFreq);
+  new Chart(document.getElementById('cropFreqChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Predictions',
+        data: values,
+        backgroundColor: 'rgba(64,145,108,0.8)',
+        borderColor: '#2d6a4f',
+        borderWidth: 1,
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+    }
+  });
+}
+</script>
+{% endblock %}

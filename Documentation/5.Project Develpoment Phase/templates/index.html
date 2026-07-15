@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+
+{% block content %}
+
+<!-- ── Hero Section ── -->
+<section class="hero-section">
+  <div class="hero-bg-overlay"></div>
+  <div class="container position-relative">
+    <div class="row align-items-center min-vh-85">
+      <div class="col-lg-6" data-aos="fade-right">
+        <div class="hero-badge mb-3">
+          <i class="fas fa-robot me-2"></i>AI-Powered Agriculture
+        </div>
+        <h1 class="hero-title">
+          Smart Crop<br>
+          <span class="gradient-text">Recommendation</span><br>
+          Engine
+        </h1>
+        <p class="hero-subtitle">
+          Leverage Machine Learning to predict the most suitable crop for your soil.
+          Input 7 soil parameters and get instant AI-powered recommendations with
+          <strong>99%+ accuracy</strong>.
+        </p>
+        <div class="d-flex flex-wrap gap-3 mt-4">
+          {% if session.user_id %}
+          <a href="{{ url_for('predict') }}" class="btn btn-hero-primary">
+            <i class="fas fa-flask me-2"></i>Predict Crop
+          </a>
+          <a href="{{ url_for('dashboard') }}" class="btn btn-hero-secondary">
+            <i class="fas fa-chart-line me-2"></i>Dashboard
+          </a>
+          {% else %}
+          <a href="{{ url_for('register') }}" class="btn btn-hero-primary">
+            <i class="fas fa-rocket me-2"></i>Get Started Free
+          </a>
+          <a href="{{ url_for('about') }}" class="btn btn-hero-secondary">
+            <i class="fas fa-play-circle me-2"></i>Learn More
+          </a>
+          {% endif %}
+        </div>
+        <div class="hero-trust mt-4">
+          <span><i class="fas fa-shield-alt text-success me-1"></i>Secure</span>
+          <span><i class="fas fa-bolt text-warning me-1"></i>Instant Results</span>
+          <span><i class="fas fa-leaf text-success me-1"></i>Eco-Friendly</span>
+        </div>
+      </div>
+      <div class="col-lg-6 text-center" data-aos="fade-left">
+        <div class="hero-illustration">
+          <div class="hero-card-float">
+            <div class="floating-card card-1">
+              <i class="fas fa-seedling text-success"></i>
+              <span>Rice Recommended</span>
+              <small>98.5% confidence</small>
+            </div>
+            <div class="floating-card card-2">
+              <i class="fas fa-thermometer-half text-warning"></i>
+              <span>Temp: 25°C</span>
+            </div>
+            <div class="floating-card card-3">
+              <i class="fas fa-tint text-info"></i>
+              <span>Humidity: 82%</span>
+            </div>
+            <div class="hero-circle-main">
+              <i class="fas fa-leaf"></i>
+              <span>OptiCrop</span>
+              <small>AI Engine</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Animated wave -->
+  <div class="hero-wave">
+    <svg viewBox="0 0 1440 80" preserveAspectRatio="none">
+      <path d="M0,40 C360,80 1080,0 1440,40 L1440,80 L0,80 Z" fill="var(--bg-primary)"/>
+    </svg>
+  </div>
+</section>
+
+<!-- ── Stats Section ── -->
+<section class="py-5 bg-body">
+  <div class="container">
+    <div class="row g-4 justify-content-center">
+      <div class="col-6 col-md-3">
+        <div class="stat-card text-center">
+          <div class="stat-icon bg-success-soft"><i class="fas fa-leaf text-success"></i></div>
+          <div class="stat-number counter" data-target="22">0</div>
+          <div class="stat-label">Crop Types</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card text-center">
+          <div class="stat-icon bg-primary-soft"><i class="fas fa-database text-primary"></i></div>
+          <div class="stat-number counter" data-target="2200">0</div>
+          <div class="stat-label">Dataset Records</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card text-center">
+          <div class="stat-icon bg-warning-soft"><i class="fas fa-bullseye text-warning"></i></div>
+          <div class="stat-number">99%</div>
+          <div class="stat-label">Model Accuracy</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card text-center">
+          <div class="stat-icon bg-info-soft"><i class="fas fa-users text-info"></i></div>
+          <div class="stat-number counter" data-target="{{ total_users }}">0</div>
+          <div class="stat-label">Registered Farmers</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Features Section ── -->
+<section class="py-5 section-alt">
+  <div class="container">
+    <div class="section-header text-center mb-5">
+      <span class="section-badge">Why Choose Us</span>
+      <h2 class="section-title">Why Choose <span class="gradient-text">OptiCrop AI</span>?</h2>
+      <p class="section-subtitle">Cutting-edge machine learning meets agricultural expertise</p>
+    </div>
+    <div class="row g-4">
+      <div class="col-md-6 col-lg-3">
+        <div class="feature-card h-100">
+          <div class="feature-icon bg-success-gradient"><i class="fas fa-brain"></i></div>
+          <h5>Machine Learning</h5>
+          <p>Random Forest algorithm trained on 2200 records with 99%+ accuracy across 22 crop types.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <div class="feature-card h-100">
+          <div class="feature-icon bg-blue-gradient"><i class="fas fa-bolt"></i></div>
+          <h5>Instant Prediction</h5>
+          <p>Get crop recommendations in milliseconds. Real-time AI inference with confidence scores.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <div class="feature-card h-100">
+          <div class="feature-icon bg-orange-gradient"><i class="fas fa-chart-pie"></i></div>
+          <h5>Smart Analytics</h5>
+          <p>Interactive dashboards with prediction history, crop frequency charts, and trend analysis.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <div class="feature-card h-100">
+          <div class="feature-icon bg-purple-gradient"><i class="fas fa-file-pdf"></i></div>
+          <h5>PDF Reports</h5>
+          <p>Download detailed crop recommendation reports with fertilizer and water requirements.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── How It Works ── -->
+<section class="py-5 bg-body">
+  <div class="container">
+    <div class="section-header text-center mb-5">
+      <span class="section-badge">Process</span>
+      <h2 class="section-title">How It <span class="gradient-text">Works</span></h2>
+      <p class="section-subtitle">Four simple steps to get your crop recommendation</p>
+    </div>
+    <div class="row g-4 align-items-center">
+      <div class="col-md-6 col-lg-3">
+        <div class="workflow-card text-center">
+          <div class="workflow-step">01</div>
+          <div class="workflow-icon"><i class="fas fa-flask"></i></div>
+          <h6>Enter Soil Data</h6>
+          <p class="small text-muted">Input N, P, K, Temperature, Humidity, pH, Rainfall</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <div class="workflow-card text-center">
+          <div class="workflow-step">02</div>
+          <div class="workflow-icon"><i class="fas fa-brain"></i></div>
+          <h6>AI Processing</h6>
+          <p class="small text-muted">Random Forest model analyzes your soil parameters</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <div class="workflow-card text-center">
+          <div class="workflow-step">03</div>
+          <div class="workflow-icon"><i class="fas fa-seedling"></i></div>
+          <h6>Get Recommendation</h6>
+          <p class="small text-muted">Receive crop name, confidence score, and growing tips</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <div class="workflow-card text-center">
+          <div class="workflow-step">04</div>
+          <div class="workflow-icon"><i class="fas fa-download"></i></div>
+          <h6>Download Report</h6>
+          <p class="small text-muted">Export a detailed PDF report for your records</p>
+        </div>
+      </div>
+    </div>
+    <div class="text-center mt-5">
+      {% if session.user_id %}
+      <a href="{{ url_for('predict') }}" class="btn btn-success btn-lg px-5">
+        <i class="fas fa-flask me-2"></i>Start Predicting Now
+      </a>
+      {% else %}
+      <a href="{{ url_for('register') }}" class="btn btn-success btn-lg px-5">
+        <i class="fas fa-user-plus me-2"></i>Create Free Account
+      </a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<!-- ── Crops Showcase ── -->
+<section class="py-5 section-alt">
+  <div class="container">
+    <div class="section-header text-center mb-5">
+      <span class="section-badge">Supported Crops</span>
+      <h2 class="section-title">22 Crops <span class="gradient-text">Supported</span></h2>
+    </div>
+    <div class="crops-grid">
+      {% set crops = [
+        ('🌾','Rice'),('🌽','Maize'),('🫘','Chickpea'),('🫘','Kidney Beans'),
+        ('🫘','Pigeon Peas'),('🫘','Moth Beans'),('🫘','Mung Bean'),('🫘','Black Gram'),
+        ('🫘','Lentil'),('🍎','Pomegranate'),('🍌','Banana'),('🥭','Mango'),
+        ('🍇','Grapes'),('🍉','Watermelon'),('🍈','Muskmelon'),('🍏','Apple'),
+        ('🍊','Orange'),('🍑','Papaya'),('🥥','Coconut'),('🌿','Cotton'),
+        ('🌿','Jute'),('☕','Coffee')
+      ] %}
+      {% for emoji, name in crops %}
+      <div class="crop-chip">
+        <span class="crop-emoji">{{ emoji }}</span>
+        <span>{{ name }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA Section ── -->
+<section class="cta-section py-5">
+  <div class="container text-center">
+    <h2 class="text-white fw-700 mb-3">Ready to Optimize Your Farm?</h2>
+    <p class="text-white-75 mb-4">Join farmers using AI to make smarter agricultural decisions</p>
+    {% if not session.user_id %}
+    <a href="{{ url_for('register') }}" class="btn btn-light btn-lg px-5 me-3">
+      <i class="fas fa-user-plus me-2"></i>Register Free
+    </a>
+    <a href="{{ url_for('login') }}" class="btn btn-outline-light btn-lg px-5">
+      <i class="fas fa-sign-in-alt me-2"></i>Login
+    </a>
+    {% else %}
+    <a href="{{ url_for('predict') }}" class="btn btn-light btn-lg px-5">
+      <i class="fas fa-flask me-2"></i>Predict Now
+    </a>
+    {% endif %}
+  </div>
+</section>
+
+{% endblock %}

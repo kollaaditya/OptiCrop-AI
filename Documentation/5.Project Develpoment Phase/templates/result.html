@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}Result – {{ crop|title }}{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-9">
+
+        <!-- Result Hero Card -->
+        <div class="result-hero-card mb-4">
+          <div class="result-hero-bg"></div>
+          <div class="result-hero-content text-center">
+            <div class="result-emoji">{{ info.emoji }}</div>
+            <div class="result-badge-label">Recommended Crop</div>
+            <h1 class="result-crop-name">{{ crop | title }}</h1>
+            <div class="confidence-ring-container">
+              <div class="confidence-ring">
+                <svg viewBox="0 0 120 120">
+                  <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="10"/>
+                  <circle cx="60" cy="60" r="50" fill="none" stroke="white" stroke-width="10"
+                          stroke-dasharray="{{ (confidence / 100 * 314.16)|round(1) }} 314.16"
+                          stroke-dashoffset="78.54" stroke-linecap="round"
+                          transform="rotate(-90 60 60)"/>
+                </svg>
+                <div class="confidence-text">
+                  <span class="conf-value">{{ confidence }}%</span>
+                  <span class="conf-label">Confidence</span>
+                </div>
+              </div>
+            </div>
+            <p class="text-white-75 mt-2">
+              <i class="fas fa-clock me-1"></i>Predicted on {{ now().strftime('%d %b %Y, %I:%M %p') if now else '' }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Crop Details Grid -->
+        <div class="row g-4 mb-4">
+          <div class="col-md-6 col-lg-4">
+            <div class="detail-card h-100">
+              <div class="detail-icon bg-success-gradient"><i class="fas fa-calendar-alt"></i></div>
+              <div class="detail-label">Suitable Season</div>
+              <div class="detail-value">{{ info.season }}</div>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-4">
+            <div class="detail-card h-100">
+              <div class="detail-icon bg-warning-gradient"><i class="fas fa-thermometer-half"></i></div>
+              <div class="detail-label">Ideal Temperature</div>
+              <div class="detail-value">{{ info.temp }}</div>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-4">
+            <div class="detail-card h-100">
+              <div class="detail-icon bg-info-gradient"><i class="fas fa-tint"></i></div>
+              <div class="detail-label">Ideal Humidity</div>
+              <div class="detail-value">{{ info.humidity }}</div>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-4">
+            <div class="detail-card h-100">
+              <div class="detail-icon bg-purple-gradient"><i class="fas fa-vial"></i></div>
+              <div class="detail-label">Ideal Soil pH</div>
+              <div class="detail-value">{{ info.ph }}</div>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-4">
+            <div class="detail-card h-100">
+              <div class="detail-icon bg-blue-gradient"><i class="fas fa-cloud-rain"></i></div>
+              <div class="detail-label">Water Requirement</div>
+              <div class="detail-value">{{ info.water }}</div>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-4">
+            <div class="detail-card h-100">
+              <div class="detail-icon bg-orange-gradient"><i class="fas fa-flask"></i></div>
+              <div class="detail-label">Recommended Fertilizer</div>
+              <div class="detail-value small">{{ info.fertilizer }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Input Summary -->
+        <div class="card border-0 shadow-sm mb-4">
+          <div class="card-header bg-transparent border-bottom">
+            <h6 class="mb-0 fw-600"><i class="fas fa-sliders-h me-2 text-success"></i>Your Input Parameters</h6>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              {% for key, val in inputs.items() %}
+              <div class="col-6 col-md-3">
+                <div class="input-summary-item">
+                  <div class="input-summary-label">{{ key }}</div>
+                  <div class="input-summary-value">{{ val }}</div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="d-flex flex-wrap gap-3 justify-content-center">
+          <a href="{{ url_for('download_report', pred_id=pred_id) }}" class="btn btn-success btn-lg px-4">
+            <i class="fas fa-file-pdf me-2"></i>Download PDF Report
+          </a>
+          <a href="{{ url_for('predict') }}" class="btn btn-outline-success btn-lg px-4">
+            <i class="fas fa-redo me-2"></i>New Prediction
+          </a>
+          <a href="{{ url_for('history') }}" class="btn btn-outline-secondary btn-lg px-4">
+            <i class="fas fa-history me-2"></i>View History
+          </a>
+          <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary btn-lg px-4">
+            <i class="fas fa-chart-line me-2"></i>Dashboard
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Animate confidence ring on load
+document.addEventListener('DOMContentLoaded', () => {
+  const circle = document.querySelector('.confidence-ring circle:last-child');
+  if (circle) {
+    circle.style.transition = 'stroke-dasharray 1.5s ease-in-out';
+  }
+});
+</script>
+{% endblock %}

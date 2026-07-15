@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+{% block title %}Predict Crop{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+
+        <!-- Header -->
+        <div class="text-center mb-5">
+          <span class="section-badge">AI Prediction</span>
+          <h2 class="section-title mt-2">Crop <span class="gradient-text">Recommendation</span></h2>
+          <p class="text-muted">Enter your soil parameters below to get an AI-powered crop recommendation</p>
+        </div>
+
+        <!-- Form Card -->
+        <div class="card predict-card shadow-lg border-0">
+          <div class="card-header predict-card-header">
+            <div class="d-flex align-items-center gap-3">
+              <div class="predict-header-icon"><i class="fas fa-flask"></i></div>
+              <div>
+                <h5 class="mb-0 text-white">Soil Analysis Form</h5>
+                <small class="text-white-50">All 7 parameters are required</small>
+              </div>
+            </div>
+          </div>
+          <div class="card-body p-4">
+            <form method="POST" action="{{ url_for('predict') }}" id="predictForm">
+
+              <!-- NPK Row -->
+              <div class="param-section mb-4">
+                <h6 class="param-section-title"><i class="fas fa-atom me-2 text-success"></i>Soil Nutrients (mg/kg)</h6>
+                <div class="row g-3">
+                  <div class="col-md-4">
+                    <label class="form-label fw-500">Nitrogen (N)</label>
+                    <div class="input-group">
+                      <span class="input-group-text bg-success-soft border-0"><i class="fas fa-n text-success"></i></span>
+                      <input type="number" class="form-control" name="nitrogen" id="nitrogen"
+                             placeholder="0 – 140" min="0" max="140" step="0.1" required>
+                    </div>
+                    <div class="range-hint">Typical: 0–140 mg/kg</div>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label fw-500">Phosphorous (P)</label>
+                    <div class="input-group">
+                      <span class="input-group-text bg-success-soft border-0"><i class="fas fa-p text-success"></i></span>
+                      <input type="number" class="form-control" name="phosphorous" id="phosphorous"
+                             placeholder="5 – 145" min="0" max="145" step="0.1" required>
+                    </div>
+                    <div class="range-hint">Typical: 5–145 mg/kg</div>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label fw-500">Potassium (K)</label>
+                    <div class="input-group">
+                      <span class="input-group-text bg-success-soft border-0"><i class="fas fa-k text-success"></i></span>
+                      <input type="number" class="form-control" name="potassium" id="potassium"
+                             placeholder="5 – 205" min="0" max="205" step="0.1" required>
+                    </div>
+                    <div class="range-hint">Typical: 5–205 mg/kg</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Climate Row -->
+              <div class="param-section mb-4">
+                <h6 class="param-section-title"><i class="fas fa-cloud-sun me-2 text-warning"></i>Climate Conditions</h6>
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label fw-500">Temperature (°C)</label>
+                    <div class="input-group">
+                      <span class="input-group-text bg-warning-soft border-0"><i class="fas fa-thermometer-half text-warning"></i></span>
+                      <input type="number" class="form-control" name="temperature" id="temperature"
+                             placeholder="8 – 44" min="0" max="50" step="0.01" required>
+                    </div>
+                    <div class="range-hint">Typical: 8–44°C</div>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-500">Humidity (%)</label>
+                    <div class="input-group">
+                      <span class="input-group-text bg-info-soft border-0"><i class="fas fa-tint text-info"></i></span>
+                      <input type="number" class="form-control" name="humidity" id="humidity"
+                             placeholder="14 – 100" min="0" max="100" step="0.01" required>
+                    </div>
+                    <div class="range-hint">Typical: 14–100%</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Soil & Rainfall -->
+              <div class="param-section mb-4">
+                <h6 class="param-section-title"><i class="fas fa-mountain me-2 text-brown"></i>Soil & Rainfall</h6>
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label fw-500">Soil pH</label>
+                    <div class="input-group">
+                      <span class="input-group-text bg-purple-soft border-0"><i class="fas fa-vial text-purple"></i></span>
+                      <input type="number" class="form-control" name="ph" id="ph"
+                             placeholder="3.5 – 9.9" min="0" max="14" step="0.01" required>
+                    </div>
+                    <div class="range-hint">Typical: 3.5–9.9</div>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-500">Rainfall (mm)</label>
+                    <div class="input-group">
+                      <span class="input-group-text bg-blue-soft border-0"><i class="fas fa-cloud-rain text-primary"></i></span>
+                      <input type="number" class="form-control" name="rainfall" id="rainfall"
+                             placeholder="20 – 300" min="0" max="500" step="0.01" required>
+                    </div>
+                    <div class="range-hint">Typical: 20–300 mm</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Buttons -->
+              <div class="d-flex gap-3 mt-4">
+                <button type="submit" class="btn btn-success btn-lg flex-grow-1" id="predictBtn">
+                  <i class="fas fa-brain me-2"></i>Predict Best Crop
+                </button>
+                <button type="reset" class="btn btn-outline-secondary btn-lg px-4">
+                  <i class="fas fa-redo me-2"></i>Reset
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Sample Values -->
+        <div class="card mt-4 border-0 shadow-sm">
+          <div class="card-body">
+            <h6 class="fw-600 mb-3"><i class="fas fa-lightbulb text-warning me-2"></i>Try Sample Values</h6>
+            <div class="row g-2">
+              <div class="col-6 col-md-3">
+                <button class="btn btn-sm btn-outline-success w-100 sample-btn"
+                  data-n="90" data-p="42" data-k="43" data-t="20.8" data-h="82" data-ph="6.5" data-r="202">
+                  🌾 Rice
+                </button>
+              </div>
+              <div class="col-6 col-md-3">
+                <button class="btn btn-sm btn-outline-warning w-100 sample-btn"
+                  data-n="77" data-p="48" data-k="20" data-t="22.6" data-h="82" data-ph="6.2" data-r="82">
+                  🌽 Maize
+                </button>
+              </div>
+              <div class="col-6 col-md-3">
+                <button class="btn btn-sm btn-outline-info w-100 sample-btn"
+                  data-n="20" data-p="67" data-k="20" data-t="25.6" data-h="52" data-ph="7.0" data-r="103">
+                  🍌 Banana
+                </button>
+              </div>
+              <div class="col-6 col-md-3">
+                <button class="btn btn-sm btn-outline-danger w-100 sample-btn"
+                  data-n="21" data-p="47" data-k="45" data-t="23.9" data-h="92" data-ph="5.8" data-r="150">
+                  ☕ Coffee
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelectorAll('.sample-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.getElementById('nitrogen').value    = btn.dataset.n;
+    document.getElementById('phosphorous').value = btn.dataset.p;
+    document.getElementById('potassium').value   = btn.dataset.k;
+    document.getElementById('temperature').value = btn.dataset.t;
+    document.getElementById('humidity').value    = btn.dataset.h;
+    document.getElementById('ph').value          = btn.dataset.ph;
+    document.getElementById('rainfall').value    = btn.dataset.r;
+  });
+});
+
+document.getElementById('predictForm').addEventListener('submit', () => {
+  document.getElementById('loadingSpinner').classList.remove('d-none');
+  document.getElementById('predictBtn').disabled = true;
+  document.getElementById('predictBtn').innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Analyzing...';
+});
+</script>
+{% endblock %}

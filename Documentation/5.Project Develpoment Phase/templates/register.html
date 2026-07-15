@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Register{% endblock %}
+
+{% block content %}
+<section class="auth-section">
+  <div class="container">
+    <div class="row justify-content-center align-items-center min-vh-80">
+      <div class="col-md-6">
+        <div class="auth-card">
+          <div class="auth-card-header text-center">
+            <div class="auth-logo"><i class="fas fa-user-plus"></i></div>
+            <h4 class="fw-700 mt-3">Create Account</h4>
+            <p class="text-muted small">Join OptiCrop AI – Smart Farming Starts Here</p>
+          </div>
+          <div class="auth-card-body">
+            <form method="POST" action="{{ url_for('register') }}" id="registerForm">
+              <div class="mb-3">
+                <label class="form-label fw-500">Full Name</label>
+                <div class="input-group">
+                  <span class="input-group-text"><i class="fas fa-user text-muted"></i></span>
+                  <input type="text" class="form-control" name="name" placeholder="John Farmer" required autofocus>
+                </div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-500">Email Address</label>
+                <div class="input-group">
+                  <span class="input-group-text"><i class="fas fa-envelope text-muted"></i></span>
+                  <input type="email" class="form-control" name="email" placeholder="you@example.com" required>
+                </div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-500">Password</label>
+                <div class="input-group">
+                  <span class="input-group-text"><i class="fas fa-lock text-muted"></i></span>
+                  <input type="password" class="form-control" name="password" id="regPwd"
+                         placeholder="Min 6 characters" minlength="6" required>
+                  <button class="btn btn-outline-secondary" type="button" onclick="togglePwd('regPwd',this)">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="mb-4">
+                <label class="form-label fw-500">Confirm Password</label>
+                <div class="input-group">
+                  <span class="input-group-text"><i class="fas fa-lock text-muted"></i></span>
+                  <input type="password" class="form-control" name="confirm_password" id="regPwd2"
+                         placeholder="Repeat password" required>
+                </div>
+                <div id="pwdMatch" class="form-text"></div>
+              </div>
+              <button type="submit" class="btn btn-success w-100 btn-lg">
+                <i class="fas fa-user-plus me-2"></i>Create Account
+              </button>
+            </form>
+            <hr class="my-4">
+            <div class="text-center">
+              <p class="text-muted small">Already have an account?
+                <a href="{{ url_for('login') }}" class="text-success fw-600">Sign In</a>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function togglePwd(id, btn) {
+  const input = document.getElementById(id);
+  const icon  = btn.querySelector('i');
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.classList.replace('fa-eye', 'fa-eye-slash');
+  } else {
+    input.type = 'password';
+    icon.classList.replace('fa-eye-slash', 'fa-eye');
+  }
+}
+
+const pwd1 = document.getElementById('regPwd');
+const pwd2 = document.getElementById('regPwd2');
+const msg  = document.getElementById('pwdMatch');
+
+pwd2.addEventListener('input', () => {
+  if (pwd2.value === '') { msg.textContent = ''; return; }
+  if (pwd1.value === pwd2.value) {
+    msg.innerHTML = '<span class="text-success"><i class="fas fa-check me-1"></i>Passwords match</span>';
+  } else {
+    msg.innerHTML = '<span class="text-danger"><i class="fas fa-times me-1"></i>Passwords do not match</span>';
+  }
+});
+</script>
+{% endblock %}
